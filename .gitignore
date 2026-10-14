@@ -1,0 +1,11 @@
+# Secret protocol — never track
+sentinel/
+
+# Runtime artefacts (mirrors excel-mcp/.gitignore at repo scope)
+*.versions/
+audit.log
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
