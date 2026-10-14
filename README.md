@@ -1,6 +1,8 @@
-# Office plugin MCP — Excel MCP
+# Pitchbook MCP — IB-specialised Excel MCP
 
-Local MCP server (`excel-mcp/`) that lets the assistant create and edit real `.xlsx` files from chat — headless (file lib, no Excel) + headed (COM driving Excel Desktop on the same Windows box).
+Local MCP server (`excel-mcp/`) that lets the assistant build IB-ready `.xlsx` from chat — 3-statement models, comps, schedules — headless (file lib, no Excel) + headed (COM driving Excel Desktop on the same Windows box).
+
+IB-first, not generic Excel: navy headers, accounting formats, frozen panes, print-fit pitchbook pages by default, with house-style presets + per-call overrides so you never hand-format decimals again.
 
 Single user, local stdio, paranoid-first: nothing writes without whitelist + explicit approval + backup + audit entry.
 
@@ -9,7 +11,7 @@ Single user, local stdio, paranoid-first: nothing writes without whitelist + exp
 - Dual engine: headless via `openpyxl` (no Excel needed), headed via `Excel.Application` COM with 3x retry + fallback warning.
 - 13 tools: 4 always-allowed reads (`list_sheets`, `read_range`, `preview_diff`, `screenshot_sheet`) + 9 gated writes (`write_range`, `set_formula`, `add_sheet`, `format_range`, `add_chart`, `add_pivot`, `add_image`, `macro_run_gated`, `rollback`).
 - Gated flow per call: `is_path_allowed` → `check_approval` (exact `ops_hash`) → `backup` → `dispatch` → `audit.append` → `{ok, backup_id, thumbnail}`.
-- IB-grade defaults verbatim (`styles/ib.py`): navy header `002060`, `Arial 10`, inputs `D9E1F2`, accounting int `/ pct` formats, thin `D9D9D9` grid, freeze + print fit. `styles/custom.json` override + per-call override wins.
+- IB presets + custom: `styles/ib.py` house defaults verbatim (navy `002060` white bold 10, body `Arial 10`, inputs `D9E1F2`, int `_-* #,##0_-;-* #,##0_-;-* "-"_-;_-@_-`, pct `%_0.0%`, thin `D9D9D9` grid, widths 14-18, row height 15, `FitToPagesWide=1 Tall=0` landscape footer `&F | &A`) → `styles/custom.json` overrides without code edits → per-call `style_override` wins. `apply_ib_table` one-shots a range IB-ready; `format_range` covers font/fill/border/number_format/alignment/freeze/print/table/validation/conditional.
 - Backups: sidecar `<Stem>.versions/<ts>_<tool>_<label>.bak + .json`, 20 FIFO, git-ignored. `rollback` backs up pre-rollback state first, so rollbacks are undoable.
 - Limits: 100,000 cells per write (else `rejected split`), `..` traversal rejected, absolute path must sit under `ALLOWED_ROOTS`.
 
