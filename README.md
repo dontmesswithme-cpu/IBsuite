@@ -1,4 +1,4 @@
-# Pitchbook MCP — IB-specialised Excel MCP
+# IBSuite MCP — IB-specialised Excel MCP
 
 Local MCP server (`excel-mcp/`) that lets the assistant build IB-ready `.xlsx` from chat — 3-statement models, comps, schedules — headless (file lib, no Excel) + headed (COM driving Excel Desktop on the same Windows box).
 
