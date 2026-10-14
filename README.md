@@ -4,7 +4,7 @@ Local MCP server (`excel-mcp/`) that lets the assistant build IB-ready `.xlsx` f
 
 IB-first, not generic Excel: navy headers, accounting formats, frozen panes, print-fit pitchbook pages by default, with house-style presets + per-call overrides so you never hand-format decimals again.
 
-Single user, local stdio, paranoid-first: nothing writes without whitelist + explicit approval + backup + audit entry.
+Single user, local stdio, paranoid-first: nothing writes without whitelist + explicit approval + backup + audit entry. Works with Claude, Opencode, Codex, Antigravity and any MCP client.
 
 ## Features
 
