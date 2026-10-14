@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "excel-mcp": {
+      "command": "C:\\PATH\\TO\\Office plugin MCP\\excel-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\PATH\\TO\\Office plugin MCP\\excel-mcp\\server.py"],
+      "cwd": "C:\\PATH\\TO\\Office plugin MCP",
+      "env": {
+        "EXCEL_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents"
+      }
+    }
+  }
+}
