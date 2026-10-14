@@ -14,7 +14,7 @@ def _resolve_allowed_roots() -> list[str]:
     env_roots = os.environ.get("EXCEL_MCP_ROOTS", "")
     if env_roots.strip():
         return [str(Path(part).expanduser()) for part in env_roots.split(";") if part.strip()]
-    return [str(PROJECT_ROOT), str(Path.home() / "Documents")]
+    return [str(PROJECT_ROOT), str(Path.home() / "Documents"), str(Path.home() / "Downloads")]
 
 
 ALLOWED_ROOTS: list[str] = _resolve_allowed_roots()
