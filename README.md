@@ -40,9 +40,9 @@ python -m venv .venv
 
 Requires Python `>=3.11`. Pinned: `mcp==2.3.0`, `openpyxl==3.1.5`, `pillow==12.3.0`, `pywin32==312`.
 
-## Configure (Opencode)
+## Configure (Claude, Opencode, Codex, Antigravity + any MCP client)
 
-Copy `excel-mcp/opencode_mcp.json.example` into your Opencode MCP config and fix paths:
+Stdio server — same wiring everywhere. Copy `excel-mcp/opencode_mcp.json.example` into your client MCP config and fix paths:
 
 ```json
 { "EXCEL_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents;${USERPROFILE}\\Downloads" }
