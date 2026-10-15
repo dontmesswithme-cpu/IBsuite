@@ -5,6 +5,7 @@ from pathlib import Path
 from openpyxl.utils import get_column_letter, range_boundaries
 
 CALL_REJECTED = -2147418111
+SERVERCALL_RETRYLATER = -2147417846
 _RETRY_DELAYS = (0.2, 0.5, 1.0)
 MAX_HEADED_CELLS = 100000
 
@@ -72,7 +73,7 @@ def _launch():
 def _excel():
     app = _launch()
     try:
-        app.Visible = False
+        app.Visible = True
         app.DisplayAlerts = False
         app.ScreenUpdating = False
         yield app
@@ -91,7 +92,33 @@ def _com_error_type():
         return None
 
 
-def _with_retry(operation):
+def _is_busy_or_locked(exc, com_error) -> bool:
+    if com_error is not None and isinstance(exc, com_error):
+        hresult = getattr(exc, "hresult", None)
+        if hresult in (CALL_REJECTED, SERVERCALL_RETRYLATER):
+            return True
+    if isinstance(exc, PermissionError):
+        return True
+    msg = str(exc).lower()
+    return "call was rejected" in msg or "busy" in msg or "locked" in msg or "retry" in msg
+
+
+def _restore_backup_if_any(path: str, ops: dict | None = None) -> None:
+    try:
+        from core.versions import list_versions, rollback
+
+        b_id = ops.get("backup_id") if ops else None
+        if not b_id:
+            all_b = list_versions(path)
+            if all_b:
+                b_id = all_b[-1]
+        if b_id:
+            rollback(path, b_id)
+    except Exception:
+        pass
+
+
+def _with_retry(operation, on_retry_exhausted=None):
     com_error = _com_error_type()
     last_rejected = None
     for index, delay in enumerate((0.0,) + _RETRY_DELAYS):
@@ -102,17 +129,22 @@ def _with_retry(operation):
         except HeadedUnavailable:
             raise
         except Exception as exc:
-            rejected = (
-                com_error is not None
-                and isinstance(exc, com_error)
-                and getattr(exc, "hresult", None) == CALL_REJECTED
-            )
-            if rejected and index < len(_RETRY_DELAYS):
+            if _is_busy_or_locked(exc, com_error):
                 last_rejected = exc
-                continue
+                if index < len(_RETRY_DELAYS):
+                    continue
+                break
             if com_error is not None and isinstance(exc, com_error):
                 raise HeadedUnavailable(f"Excel COM error: {exc}") from exc
             raise
+    if last_rejected is not None:
+        if on_retry_exhausted:
+            return on_retry_exhausted(last_rejected)
+        return {
+            "ok": False,
+            "status": "needs_retry",
+            "reason": f"file locked or Excel busy after retries: {last_rejected}",
+        }
     raise HeadedUnavailable(f"Excel busy/detached after retries: {last_rejected}") from last_rejected
 
 
@@ -195,6 +227,14 @@ def headed_apply(path: str, ops: dict) -> dict:
         ref = _range_ref(bounds)
         payload = rows[0][0] if len(rows) == 1 and len(rows[0]) == 1 else tuple(tuple(r) for r in rows)
 
+        def _on_retry_exhausted(exc):
+            _restore_backup_if_any(path, ops)
+            return {
+                "ok": False,
+                "status": "needs_retry",
+                "reason": f"file locked or Excel busy after retries: {exc}",
+            }
+
         # Save on success, discard on error; always release the workbook.
         def _do_write_clean():
             with _excel() as app:
@@ -204,6 +244,9 @@ def headed_apply(path: str, ops: dict) -> dict:
                     ws.Range(ref).Value = payload
                     wb.Save()
                     result = {"ok": True, "sheet": sheet, "range": ref, "rows": len(rows), "cols": len(rows[0])}
+                except Exception:
+                    _restore_backup_if_any(path, ops)
+                    raise
                 finally:
                     try:
                         wb.Close(SaveChanges=False)
@@ -211,7 +254,7 @@ def headed_apply(path: str, ops: dict) -> dict:
                         pass
                 return result
 
-        return _with_retry(_do_write_clean)
+        return _with_retry(_do_write_clean, on_retry_exhausted=_on_retry_exhausted)
 
     if tool == "set_formula":
         for key in ("sheet", "cell", "formula"):
@@ -226,6 +269,14 @@ def headed_apply(path: str, ops: dict) -> dict:
         _require_file(path)
         ref = _range_ref(bounds)
 
+        def _on_formula_exhausted(exc):
+            _restore_backup_if_any(path, ops)
+            return {
+                "ok": False,
+                "status": "needs_retry",
+                "reason": f"file locked or Excel busy after retries: {exc}",
+            }
+
         def _do_formula():
             with _excel() as app:
                 wb = app.Workbooks.Open(str(Path(path).resolve()))
@@ -234,6 +285,9 @@ def headed_apply(path: str, ops: dict) -> dict:
                     ws.Range(ref).Formula = formula
                     wb.Save()
                     result = {"ok": True, "sheet": sheet, "cell": ref, "formula": formula}
+                except Exception:
+                    _restore_backup_if_any(path, ops)
+                    raise
                 finally:
                     try:
                         wb.Close(SaveChanges=False)
@@ -241,7 +295,7 @@ def headed_apply(path: str, ops: dict) -> dict:
                         pass
                 return result
 
-        return _with_retry(_do_formula)
+        return _with_retry(_do_formula, on_retry_exhausted=_on_formula_exhausted)
 
     for key in ("name",):
         if key not in ops:
@@ -250,6 +304,14 @@ def headed_apply(path: str, ops: dict) -> dict:
     if not title:
         raise ValueError("empty sheet name")
     _require_file(path)
+
+    def _on_add_exhausted(exc):
+        _restore_backup_if_any(path, ops)
+        return {
+            "ok": False,
+            "status": "needs_retry",
+            "reason": f"file locked or Excel busy after retries: {exc}",
+        }
 
     def _do_add():
         with _excel() as app:
@@ -264,6 +326,9 @@ def headed_apply(path: str, ops: dict) -> dict:
                 wb.Worksheets.Add().Name = title
                 wb.Save()
                 result = {"ok": True, "sheet": title}
+            except Exception:
+                _restore_backup_if_any(path, ops)
+                raise
             finally:
                 try:
                     wb.Close(SaveChanges=False)
@@ -271,4 +336,4 @@ def headed_apply(path: str, ops: dict) -> dict:
                     pass
             return result
 
-    return _with_retry(_do_add)
+    return _with_retry(_do_add, on_retry_exhausted=_on_add_exhausted)

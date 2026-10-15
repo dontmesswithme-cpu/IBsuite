@@ -71,3 +71,22 @@ def test_headed_read_missing_file_before_com(tmp_path):
         headed_read(str(f), "Sheet1", "A1")
 
     assert not f.exists()
+
+
+def test_headed_visible_default(monkeypatch):
+    import core.headed as headed_mod
+    seen = {}
+    class FakeApp:
+        def __init__(self, seen):
+            self._seen = seen
+        def __setattr__(self, name, value):
+            if name in ("Visible", "DisplayAlerts", "ScreenUpdating"):
+                self._seen[name] = value
+            else:
+                object.__setattr__(self, name, value)
+        def Quit(self):
+            pass
+    monkeypatch.setattr(headed_mod, "_launch", lambda: FakeApp(seen))
+    with headed_mod._excel():
+        pass
+    assert seen["Visible"] is True and seen["DisplayAlerts"] is False
