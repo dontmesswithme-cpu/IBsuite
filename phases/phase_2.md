@@ -64,3 +64,16 @@ On a red gate: `git checkout -- excel-mcp/core excel-mcp/tests ppt-mcp` for phas
 
 ---
 [SN] Phase 2 contract, draft for DIR review. Self-check C1–C9 runs live before handoff; building starts only after DIR approves this file and writing-plans delivers the task plan.
+
+---
+
+## DIR Executive Decision — 2026-10-15: whitelist purged, allow-by-default denylist
+
+DIR overrules the `ALLOWED_ROOTS` whitelist wherever this contract names it
+(Deliverables `config.py` / `core/guard.py` lines above, via spec §8 R7):
+both servers now allow every path except `DENIED_PREFIXES` (system dirs,
+other users' profiles, drive roots, `sentinel/`; `..` resolves before the
+check). Rationale: Claude Desktop could not write under any allowed root.
+Approval gate, backups, and audit are unchanged. Implemented in `1896f1f`
+(excel suite 123 passed, ppt suite 65 passed). Existing sections above are
+left verbatim as build history; `spec.md` D9/D17/R7 carry the amended wording.

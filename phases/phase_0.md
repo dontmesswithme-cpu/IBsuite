@@ -50,3 +50,14 @@ DS order: P0.1 files first, `npm run check` per save, then P0.2 in listed order.
 
 ---
 [SN] Phase 0 contract locked. Retiring SN. Ready for Terminal 1 (DS) + Terminal 2 (OP) Sentinel execution.
+
+---
+
+## DIR Executive Decision — 2026-10-15: allow-by-default denylist (post-Phase-2 amendment)
+
+DIR overrules the `ALLOWED_ROOTS` whitelist named in P0.1 Deliverables above:
+both servers now enforce `DENIED_PREFIXES` instead (system dirs, other users'
+profiles, drive roots, `sentinel/`). Rationale: the whitelist blocked real
+client work (Claude Desktop could write under no allowed root). Approval gate,
+backups, and audit are unchanged. Implemented in `1896f1f`. Sections above left
+verbatim as build history; `spec.md` D9/D17 carry the amended wording.
