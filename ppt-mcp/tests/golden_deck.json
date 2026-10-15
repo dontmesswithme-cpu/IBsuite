@@ -1,0 +1,48 @@
+{
+  "fills": {
+    "header": "002060"
+  },
+  "fonts": {
+    "header": {
+      "color": "FFFFFF",
+      "bold": true,
+      "name": "Arial"
+    },
+    "body": {
+      "name": "Arial",
+      "color": "000000"
+    }
+  },
+  "layout": {
+    "slide_count": 4,
+    "aspect_ratio": "16:9",
+    "width_inches": 13.333,
+    "height_inches": 7.5
+  },
+  "slides": [
+    {
+      "slide": 1,
+      "title": "Investment Banking Pitch Book",
+      "has_table": false,
+      "has_chart": false
+    },
+    {
+      "slide": 2,
+      "title": "Three-Statement Summary",
+      "has_table": true,
+      "has_chart": false
+    },
+    {
+      "slide": 3,
+      "title": "Public Comps Valuation",
+      "has_table": true,
+      "has_chart": false
+    },
+    {
+      "slide": 4,
+      "title": "Revenue & EBITDA Trajectory",
+      "has_table": false,
+      "has_chart": true
+    }
+  ]
+}
