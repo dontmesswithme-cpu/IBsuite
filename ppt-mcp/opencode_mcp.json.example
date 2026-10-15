@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ppt-mcp": {
+      "command": "C:\\PATH\\TO\\Office plugin MCP\\ppt-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\PATH\\TO\\Office plugin MCP\\ppt-mcp\\server.py"],
+      "cwd": "C:\\PATH\\TO\\Office plugin MCP",
+      "env": {
+        "PPT_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents;${USERPROFILE}\\Downloads"
+      }
+    }
+  }
+}

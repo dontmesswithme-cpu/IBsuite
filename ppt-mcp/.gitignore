@@ -1,0 +1,18 @@
+# Virtual envs / caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# Runtime artefacts (spec D11 / D12 / R7)
+*.versions/
+audit.log
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
