@@ -87,21 +87,29 @@ def test_ib_header_and_accounting(tmp_path):
 # --- golden assertions: every IB marker pinned to golden_ib.json ---
 
 
+def test_golden_schema_frozen():
+    assert set(GOLDEN.keys()) == {"fills", "number_formats", "fonts", "borders", "layout"}
+    import re
+    src = Path(__file__).read_text(encoding="utf-8")
+    accessed_keys = set(re.findall(r'GOLDEN\["([^"]+)"\]', src))
+    assert accessed_keys == {"fills", "number_formats", "fonts", "borders", "layout"}
+
+
 def test_golden_header_fill_and_font(tmp_path):
     f = tmp_path / "m.xlsx"
     make_minimal_xlsx(str(f))
     apply_ib_table(str(f), "Sheet1", "A1:C3", True)
 
     fills = inspect_fills(str(f), "Sheet1", "A1:C1")
-    assert fills[0] == [GOLDEN["header_fill"]] * 3
+    assert fills[0] == [GOLDEN["fills"]["header"]] * 3
 
     wb = load_workbook(str(f))
     try:
         font = wb["Sheet1"]["A1"].font
-        assert font.bold is GOLDEN["header_font"]["bold"]
-        assert font.size == GOLDEN["header_font"]["size"]
-        assert _rgb(font.color) == GOLDEN["header_font"]["color"]
-        assert font.name == GOLDEN["header_font"]["name"]
+        assert font.bold is GOLDEN["fonts"]["header"]["bold"]
+        assert font.size == GOLDEN["fonts"]["header"]["size"]
+        assert _rgb(font.color) == GOLDEN["fonts"]["header"]["color"]
+        assert font.name == GOLDEN["fonts"]["header"]["name"]
     finally:
         wb.close()
 
@@ -113,14 +121,14 @@ def test_golden_body_number_format_and_font(tmp_path):
 
     fmts = inspect_formats(str(f), "Sheet1", "A2:C3")
     for row in fmts:
-        assert row == [GOLDEN["body_number_format"]] * 3
+        assert row == [GOLDEN["number_formats"]["body"]] * 3
 
     wb = load_workbook(str(f))
     try:
         font = wb["Sheet1"]["B2"].font
-        assert font.name == GOLDEN["body_font"]["name"]
-        assert font.size == GOLDEN["body_font"]["size"]
-        assert font.bold is GOLDEN["body_font"]["bold"]
+        assert font.name == GOLDEN["fonts"]["body"]["name"]
+        assert font.size == GOLDEN["fonts"]["body"]["size"]
+        assert font.bold is GOLDEN["fonts"]["body"]["bold"]
     finally:
         wb.close()
 
@@ -134,12 +142,12 @@ def test_golden_grid_and_total_borders(tmp_path):
     try:
         ws = wb["Sheet1"]
         body = ws["B2"].border
-        assert body.bottom.style == GOLDEN["grid_border"]["style"]
-        assert _rgb(body.bottom.color) == GOLDEN["grid_border"]["color"]
+        assert body.bottom.style == GOLDEN["borders"]["grid"]["style"]
+        assert _rgb(body.bottom.color) == GOLDEN["borders"]["grid"]["color"]
 
         total = ws["B3"].border
-        assert total.bottom.style == GOLDEN["total_border"]["style"]
-        assert _rgb(total.bottom.color) == GOLDEN["total_border"]["color"]
+        assert total.bottom.style == GOLDEN["borders"]["total"]["style"]
+        assert _rgb(total.bottom.color) == GOLDEN["borders"]["total"]["color"]
     finally:
         wb.close()
 
@@ -152,15 +160,19 @@ def test_golden_freeze_widths_height_and_print(tmp_path):
     wb = load_workbook(str(f))
     try:
         ws = wb["Sheet1"]
-        assert ws.freeze_panes == GOLDEN["freeze_panes"]
+        assert ws.freeze_panes == GOLDEN["layout"]["freeze_panes"]
         for col in ("A", "B", "C"):
-            assert ws.column_dimensions[col].width == GOLDEN["col_width"]
+            assert ws.column_dimensions[col].width == GOLDEN["layout"]["col_width"]
         for row in (1, 2, 3):
-            assert ws.row_dimensions[row].height == GOLDEN["row_height"]
-        assert ws.page_setup.orientation == GOLDEN["print"]["orientation"]
-        assert ws.page_setup.fitToWidth == GOLDEN["print"]["fit_to_pages_wide"]
-        assert ws.page_setup.fitToHeight == GOLDEN["print"]["fit_to_pages_tall"]
-        assert ws.oddFooter.center.text == GOLDEN["print"]["footer"]
+            assert ws.row_dimensions[row].height == GOLDEN["layout"]["row_height"]
+        assert ws.page_setup.orientation == GOLDEN["layout"]["print"]["orientation"]
+        assert ws.page_setup.fitToWidth == GOLDEN["layout"]["print"]["fit_to_pages_wide"]
+        assert ws.page_setup.fitToHeight == GOLDEN["layout"]["print"]["fit_to_pages_tall"]
+        assert ws.oddFooter.center.text == GOLDEN["layout"]["print"]["footer"]
+        assert ws.oddFooter.left.text == ""
+        assert ws.oddFooter.right.text == ""
+        assert ws.oddFooter.center.text == "&F | &A"
+        assert f"{ws.oddFooter.left.text}{ws.oddFooter.center.text}{ws.oddFooter.right.text}" == "&F | &A"
     finally:
         wb.close()
 
@@ -180,7 +192,7 @@ def test_apply_ib_table_without_totals_has_no_double_border(tmp_path):
 
     wb = load_workbook(str(f))
     try:
-        assert wb["Sheet1"]["B3"].border.bottom.style == GOLDEN["grid_border"]["style"]
+        assert wb["Sheet1"]["B3"].border.bottom.style == GOLDEN["borders"]["grid"]["style"]
     finally:
         wb.close()
 

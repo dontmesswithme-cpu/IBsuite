@@ -1,5 +1,7 @@
+import re
 from pathlib import Path
 
+import openpyxl.worksheet.header_footer as _openpyxl_hf
 from openpyxl import Workbook, load_workbook
 from openpyxl.formatting.rule import CellIsRule, FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -10,6 +12,23 @@ from openpyxl.worksheet.properties import PageSetupProperties
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
 from config import resolve_style
+
+# Ensure openpyxl deserializes empty header/footer side sections as "" instead of eating center
+_orig_split_string = _openpyxl_hf._split_string
+
+
+def _safe_split_string(text):
+    if not text:
+        return {"left": "", "center": "", "right": ""}
+    m = re.match(r"(&L(?P<left>.*?))?(&C(?P<center>.*?))?(&R(?P<right>.*?))?$", text, re.DOTALL)
+    if m:
+        d = m.groupdict()
+        return {k: (v if v is not None else "") for k, v in d.items()}
+    return _orig_split_string(text)
+
+
+_openpyxl_hf._split_string = _safe_split_string
+
 
 STYLE_KEYS = (
     "font",
@@ -306,9 +325,9 @@ def _apply_print(ws, spec: dict | None) -> None:
     if "fit_to_pages_tall" in spec:
         ws.page_setup.fitToHeight = int(spec["fit_to_pages_tall"])
     if "footer" in spec:
-        ws.oddFooter.left.text = None
+        ws.oddFooter.left.text = ""
         ws.oddFooter.center.text = str(spec["footer"])
-        ws.oddFooter.right.text = None
+        ws.oddFooter.right.text = ""
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 
 
@@ -537,9 +556,9 @@ def apply_ib_table(path: str, sheet: str, cell_range: str, has_totals: bool) -> 
         ws.page_setup.fitToWidth = print_setup["fit_to_pages_wide"]
         ws.page_setup.fitToHeight = print_setup["fit_to_pages_tall"]
         footer = str(print_setup["footer"])
-        ws.oddFooter.left.text = None
+        ws.oddFooter.left.text = ""
         ws.oddFooter.center.text = footer
-        ws.oddFooter.right.text = None
+        ws.oddFooter.right.text = ""
         ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
 
         wb.save(path)
