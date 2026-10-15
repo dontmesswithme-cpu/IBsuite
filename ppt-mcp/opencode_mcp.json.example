@@ -5,7 +5,7 @@
       "args": ["C:\\PATH\\TO\\Office plugin MCP\\ppt-mcp\\server.py"],
       "cwd": "C:\\PATH\\TO\\Office plugin MCP",
       "env": {
-        "PPT_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents;${USERPROFILE}\\Downloads"
+        "PPT_MCP_DENIED_EXTRA": ""
       }
     }
   }

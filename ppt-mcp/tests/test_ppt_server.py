@@ -1,7 +1,6 @@
 import pytest
 from pptx import Presentation
 
-import config
 import core.audit as audit_mod
 from server import call_tool, ops_hash
 
@@ -15,7 +14,6 @@ def make_minimal_pptx(path: str) -> None:
 
 @pytest.fixture
 def sandbox(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "ALLOWED_ROOTS", [str(tmp_path)])
     log = tmp_path / "audit.log"
     monkeypatch.setattr(audit_mod, "AUDIT_LOG_PATH", log)
     return tmp_path, log

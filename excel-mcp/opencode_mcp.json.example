@@ -5,7 +5,7 @@
       "args": ["C:\\PATH\\TO\\Office plugin MCP\\excel-mcp\\server.py"],
       "cwd": "C:\\PATH\\TO\\Office plugin MCP",
       "env": {
-        "EXCEL_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents;${USERPROFILE}\\Downloads"
+        "EXCEL_MCP_DENIED_EXTRA": ""
       }
     }
   }

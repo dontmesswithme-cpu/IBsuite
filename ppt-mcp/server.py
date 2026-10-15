@@ -96,7 +96,7 @@ def call_tool(name: str, arguments: dict | None = None) -> dict:
         return {
             "ok": False,
             "status": "rejected",
-            "reason": f"path outside ALLOWED_ROOTS: {path}",
+            "reason": f"denied path: {path}",
         }
 
     if name == "screenshot_slide":

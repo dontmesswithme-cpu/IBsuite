@@ -233,7 +233,7 @@ def call_tool(tool: str, params: dict) -> dict:
     params = dict(params or {})
     path = params.get("path", "")
     if not guard.is_path_allowed(path):
-        return {"ok": False, "status": "rejected", "reason": f"path outside ALLOWED_ROOTS: {path!r}"}
+        return {"ok": False, "status": "rejected", "reason": f"denied path: {path!r}"}
     if tool in READ_TOOLS:
         return _call_read(tool, params)
     if tool == "macro_run_gated":

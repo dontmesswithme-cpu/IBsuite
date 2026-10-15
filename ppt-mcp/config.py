@@ -10,14 +10,32 @@ PROJECT_ROOT = BASE_DIR.parent
 CUSTOM_STYLES_PATH = BASE_DIR / "styles" / "custom.json"
 
 
-def _resolve_allowed_roots() -> list[str]:
-    env_roots = os.environ.get("PPT_MCP_ROOTS", "")
-    if env_roots.strip():
-        return [str(Path(part).expanduser()) for part in env_roots.split(";") if part.strip()]
-    return [str(PROJECT_ROOT), str(Path.home() / "Documents"), str(Path.home() / "Downloads")]
+def _default_denied_prefixes() -> list[str]:
+    denied: list[str] = []
+    windir = os.environ.get("SystemRoot") or os.environ.get("windir") or r"C:\Windows"
+    denied.append(windir)
+    for var in ("ProgramFiles", "ProgramFiles(x86)", "ProgramData"):
+        val = os.environ.get(var)
+        if val and val.strip():
+            denied.append(val)
+    # Other users' profiles (siblings of this user's home under C:\Users).
+    try:
+        home = Path.home()
+        if home.parent.name.lower() == "users":
+            for child in home.parent.iterdir():
+                if child.is_dir() and child != home:
+                    denied.append(str(child))
+    except OSError:
+        pass
+    # Protocol files: the sentinel runtime is never a deck target.
+    denied.append(str(PROJECT_ROOT / "sentinel"))
+    # Operator escape hatch: extra semicolon-separated prefixes to deny.
+    extra = os.environ.get("PPT_MCP_DENIED_EXTRA", "")
+    denied.extend(part for part in extra.split(";") if part.strip())
+    return [str(Path(part.strip()).expanduser()) for part in denied if part.strip()]
 
 
-ALLOWED_ROOTS: list[str] = _resolve_allowed_roots()
+DENIED_PREFIXES: list[str] = _default_denied_prefixes()
 
 
 def load_custom_overrides() -> dict:

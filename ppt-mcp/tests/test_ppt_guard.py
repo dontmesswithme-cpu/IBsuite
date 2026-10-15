@@ -1,4 +1,9 @@
-"""Task 2 tests: whitelist enforcement and the paranoid approval gate (ppt)."""
+"""Task 2 tests: denylist path enforcement and the paranoid approval gate (ppt)."""
+
+import os
+from pathlib import Path
+
+import pytest
 
 import config
 from core.guard import check_approval, is_path_allowed, make_ops_hash
@@ -9,34 +14,48 @@ OPS = {
 }
 
 
-def test_traversal_rejected_no_side_effects():
-    assert is_path_allowed("..\\..\\secret.pptx") is False
+def test_system_dirs_denied():
     assert is_path_allowed("C:\\Windows\\foo.pptx") is False
+    assert is_path_allowed("C:\\Windows\\System32\\drivers\\etc\\hosts") is False
 
 
-def test_rejected_paths_create_no_side_effects(tmp_path, monkeypatch):
-    allowed = tmp_path / "allowed"
-    allowed.mkdir()
+def test_denied_prefixes_cover_system_and_sentinel():
+    lowered = [d.lower() for d in config.DENIED_PREFIXES]
+    assert any("windows" in d for d in lowered)
+    assert any("sentinel" in d for d in lowered)
+
+
+def test_program_files_denied():
+    program_files = os.environ.get("ProgramFiles")
+    if not program_files:
+        pytest.skip("ProgramFiles env var not set on this box")
+    assert is_path_allowed(str(Path(program_files) / "app.pptx")) is False
+
+
+def test_everyday_paths_allowed(tmp_path):
+    assert is_path_allowed(str(tmp_path / "d.pptx")) is True
+    assert is_path_allowed("relative_deck.pptx") is True
+
+
+def test_dotdot_resolves_before_decision(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(config, "ALLOWED_ROOTS", [str(allowed)])
+    assert is_path_allowed("..\\outside_but_safe.pptx") is True
+    assert is_path_allowed("C:\\Windows\\..\\Windows\\foo.pptx") is False
 
-    assert is_path_allowed("..\\..\\secret.pptx") is False
+
+def test_denied_paths_create_no_side_effects(tmp_path):
+    before = sorted(p.name for p in tmp_path.iterdir())
     assert is_path_allowed("C:\\Windows\\System32\\drivers\\etc\\hosts") is False
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["allowed"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == before
 
 
-def test_documents_root_is_allowed():
-    docs = next(r for r in config.ALLOWED_ROOTS if "Documents" in r)
-    assert is_path_allowed(f"{docs}\\deck.pptx") is True
+def test_sentinel_tree_denied():
+    sentinel_file = Path(config.PROJECT_ROOT) / "sentinel" / "inbox_ds.md"
+    assert is_path_allowed(str(sentinel_file)) is False
 
 
-def test_project_root_is_allowed():
-    root = next(r for r in config.ALLOWED_ROOTS if "Office plugin MCP" in r)
-    assert is_path_allowed(f"{root}\\ppt-mcp\\deck.pptx") is True
-
-
-def test_absolute_path_outside_roots_rejected():
-    assert is_path_allowed("C:\\Windows\\System32\\drivers\\etc\\hosts") is False
+def test_drive_root_denied():
+    assert is_path_allowed("C:\\") is False
 
 
 def test_empty_path_rejected():
@@ -44,8 +63,13 @@ def test_empty_path_rejected():
     assert is_path_allowed("   ") is False
 
 
-def test_root_itself_is_not_a_target():
-    assert is_path_allowed(config.ALLOWED_ROOTS[0]) is False
+def test_existing_directory_is_not_a_target(tmp_path):
+    assert is_path_allowed(str(tmp_path)) is False
+
+
+def test_denied_prefix_override(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DENIED_PREFIXES", [str(tmp_path)])
+    assert is_path_allowed(str(tmp_path / "d.pptx")) is False
 
 
 def test_ppt_approval_gate():

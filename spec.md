@@ -25,7 +25,7 @@ Plan: `docs/superpowers/plans/2026-10-13-excel-mcp.md` (9 tasks, TDD)
 - D4 IB-grade defaults verbatim (§5). D5 `styles/ib.py` + `styles/custom.json` override + per-call override.
 - D6 local stdio V1; `server.py` thin, `core/` transport-agnostic.
 - D7 stack above. D8 single server dual-engine (rejected split-server).
-- D9 paranoid-first: reads always, writes return `needs_approval` until exact `ops_hash` approved; whitelist `ALLOWED_ROOTS`.
+- D9 paranoid-first: reads always, writes return `needs_approval` until exact `ops_hash` approved; denylist `DENIED_PREFIXES` (amended 2026-10-15: allow-by-default, system dirs / other users / drive roots / `sentinel/` denied).
 - D10 macros: read freely, execute only with `macro_approved:true` + approval hash; log SHA256 only, never auto-run.
 - D11 review: diff always, thumbnail every change, full PNG on `show me`, version history + rollback.
 - D12 backups: sidecar `<Stem>.versions/<ts>_<tool>_<label>.bak` + `.json`, 20 FIFO, git-ignored.
@@ -80,7 +80,7 @@ Date: 2026-10-14. Status: draft for DIR review. Pre-Phase-1 text (§1–§6) tra
 - D14 Fixture is synthetic with its builder committed (`make_ib_model.py`), so any reviewer regenerates deterministically; the binary is also committed for zero-setup runs.
 - D15 Circular = store-verbatim-never-evaluate (extends A7).
 - D16 Headed = open-by-path-only (closes archive Q3).
-- D17 `ALLOWED_ROOTS` default = repo root + `~/Documents` + `~/Downloads` (code + example already shipped 2026-10-14; closes archive Q1 as stated; per-write approval stays per D9).
+- D17 `DENIED_PREFIXES` default = Windows dir + Program Files(x86/Data) + other users' profiles + drive roots + `sentinel/` (amended 2026-10-15, supersedes the `ALLOWED_ROOTS` trio; per-write approval stays per D9).
 - D18 Clients = Claude, Opencode, Codex, Antigravity + any MCP stdio client (README already reflects).
 
 ### Open questions (none blocking)
@@ -95,7 +95,7 @@ Date: 2026-10-14. Status: draft for DIR review.
 ### Requirements (each names its verifier)
 
 - R6 Excel headed runs visible. `core/headed.py: _excel()` sets `Visible=True` (default, not opt-in); `DisplayAlerts=False` stays. Amends R3's flag in place. Verifier: `test_headed.py::test_headed_visible_default` green (COM-stubbed assert `Visible is True`, `DisplayAlerts is False`) + headed integration on the real model raises nothing.
-- R7 PowerPoint server `ppt-mcp/` beside `excel-mcp/`, dual-engine: headless via `python-pptx` (pinned), headed via `PowerPoint.Application` COM on the same box. V1 ops: slides (add/list, layouts, 16:9 + 4:3 sizing), text (read/set), tables, charts, images, theme formatting (fonts, fills, IB navy/white). Same paranoid flow as Excel: whitelist `ALLOWED_ROOTS` (same default trio), exact-`ops_hash` approval, copy-before-write sidecar backups (20 FIFO), append-only audit, `{ok, backup_id, thumbnail}` returns. Verifier: `ppt-mcp` suite green (AC-2).
+- R7 PowerPoint server `ppt-mcp/` beside `excel-mcp/`, dual-engine: headless via `python-pptx` (pinned), headed via `PowerPoint.Application` COM on the same box. V1 ops: slides (add/list, layouts, 16:9 + 4:3 sizing), text (read/set), tables, charts, images, theme formatting (fonts, fills, IB navy/white). Same paranoid flow as Excel: denylist `DENIED_PREFIXES` (amended 2026-10-15, was whitelist trio), exact-`ops_hash` approval, copy-before-write sidecar backups (20 FIFO), append-only audit, `{ok, backup_id, thumbnail}` returns. Verifier: `ppt-mcp` suite green (AC-2).
 - R8 PPT headed is visible with shared Excel patterns: open-by-path only, `Visible=True`, busy → retry 200/500/1000ms then `{status:"needs_retry"}` + `.bak` restore, detached → `{warning:"headed_unavailable_fell_back"}` + headless result. Default engine `mode="headless"` on every tool. Verifier: `test_stress_ppt.py` headed tests green here, skipped (never error) elsewhere.
 - R9 PPT golden deck fixture. `ppt-mcp/tests/fixtures/make_deck.py: build(path: str) -> None` generates `ib_deck.pptx` (title slide, 3-statement summary, comps table, chart slide, 16:9); theme asserts (heading font white bold on `002060`, body `Arial`, accounting-style tables) match frozen `golden_deck.json`. Verifier: `test_deck.py::test_full_ib_grade_vs_golden` green.
 

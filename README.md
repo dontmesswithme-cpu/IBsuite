@@ -13,7 +13,7 @@ Single user, local stdio, paranoid-first: nothing writes without whitelist + exp
 - Gated flow per call: `is_path_allowed` → `check_approval` (exact `ops_hash`) → `backup` → `dispatch` → `audit.append` → `{ok, backup_id, thumbnail}`.
 - IB presets + custom: `styles/ib.py` house defaults verbatim (navy `002060` white bold 10, body `Arial 10`, inputs `D9E1F2`, int `_-* #,##0_-;-* #,##0_-;-* "-"_-;_-@_-`, pct `%_0.0%`, thin `D9D9D9` grid, widths 14-18, row height 15, `FitToPagesWide=1 Tall=0` landscape footer `&F | &A`) → `styles/custom.json` overrides without code edits → per-call `style_override` wins. `apply_ib_table` one-shots a range IB-ready; `format_range` covers font/fill/border/number_format/alignment/freeze/print/table/validation/conditional.
 - Backups: sidecar `<Stem>.versions/<ts>_<tool>_<label>.bak + .json`, 20 FIFO, git-ignored. `rollback` backs up pre-rollback state first, so rollbacks are undoable.
-- Limits: 100,000 cells per write (else `rejected split`), `..` traversal rejected, absolute path must sit under `ALLOWED_ROOTS`.
+- Limits: 100,000 cells per write (else `rejected split`), `..` resolved before the check, everything allowed except the denylist (system dirs, other users' profiles, drive roots, `sentinel/`).
 
 ## Layout
 
@@ -45,10 +45,10 @@ Requires Python `>=3.11`. Pinned: `mcp==2.3.0`, `openpyxl==3.1.5`, `pillow==12.3
 Stdio server — same wiring everywhere. Copy `excel-mcp/opencode_mcp.json.example` into your client MCP config and fix paths:
 
 ```json
-{ "EXCEL_MCP_ROOTS": "C:\\PATH\\TO\\Office plugin MCP;${USERPROFILE}\\Documents;${USERPROFILE}\\Downloads" }
+{ "EXCEL_MCP_DENIED_EXTRA": "" }
 ```
 
-Defaults without env (fresh clone): repo root + `~/Documents` + `~/Downloads`. Every tool takes `mode: headless|headed` (default `headless`).
+No path whitelist: every path is allowed except `DENIED_PREFIXES` (system dirs, other users' profiles, drive roots, `sentinel/`; extend via `*_DENIED_EXTRA`). Every tool takes `mode: headless|headed` (default `headless`).
 
 ## Use
 
@@ -69,7 +69,7 @@ excel-mcp\.venv\Scripts\python.exe -m pytest excel-mcp/tests/ -q -m needs_excel 
 
 ## Security notes
 
-- Whitelist `ALLOWED_ROOTS` enforced in `server.call_tool` before backup/audit. Outside roots → `rejected`, no side effects.
+- Denylist `DENIED_PREFIXES` enforced in `server.call_tool` before backup/audit. Denied paths → `rejected`, no side effects.
 - Audit lines to `audit.log`: `ts | tool | path | sheet:range | backup_id | ok/ERROR`. Errors never half-write; headed restores `.bak` on exception.
 - No network listen (stdio only). `audit.log` + `*.versions/` git-ignored.
 

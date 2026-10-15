@@ -1,9 +1,8 @@
-"""Task 9 tests: paranoid MCP flow (whitelist -> approval -> backup -> dispatch -> audit)."""
+"""Task 9 tests: paranoid MCP flow (deny-gate -> approval -> backup -> dispatch -> audit)."""
 
 import pytest
 from openpyxl import Workbook, load_workbook
 
-import config
 import core.audit as audit_mod
 import server
 from server import call_tool, executed_flag, ops_hash
@@ -19,7 +18,6 @@ def make_minimal_xlsx(path: str) -> None:
 
 @pytest.fixture
 def sandbox(tmp_path, monkeypatch):
-    monkeypatch.setattr(config, "ALLOWED_ROOTS", [str(tmp_path)])
     log = tmp_path / "audit.log"
     monkeypatch.setattr(audit_mod, "AUDIT_LOG_PATH", log)
     return tmp_path, log
@@ -39,7 +37,6 @@ def read_cell(path: str):
 def test_macro_without_flag_never_executes(tmp_path, monkeypatch):
     log = tmp_path / "audit.log"
     monkeypatch.setattr(audit_mod, "AUDIT_LOG_PATH", log)
-    monkeypatch.setattr(config, "ALLOWED_ROOTS", [str(tmp_path)])
 
     f = tmp_path / "m.xlsm"
     make_minimal_xlsx(str(f))
@@ -106,7 +103,7 @@ def test_screenshot_sheet_thumbnail_always_full_on_demand(sandbox):
     assert out2["full_b64"] and len(out2["full_b64"]) > len(out2["thumbnail_b64"])
 
 
-# --- whitelist is first, before backup and audit ---
+# --- deny-gate is first, before backup and audit ---
 
 
 def test_outside_path_rejected_before_approval_backup_and_audit(sandbox):

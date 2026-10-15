@@ -1,10 +1,10 @@
-"""Task 1 tests: IB style defaults, override precedence, ALLOWED_ROOTS."""
+"""Task 1 tests: IB style defaults, override precedence, DENIED_PREFIXES."""
 
 import json
 
 import pytest
 
-from config import ALLOWED_ROOTS, load_custom_overrides, resolve_style
+from config import DENIED_PREFIXES, load_custom_overrides, resolve_style
 from styles.ib import IB_DEFAULTS, get_style
 
 INT_FMT = '_-* #,##0_-;-* #,##0_-;-* "-"_-;_-@_-'
@@ -17,8 +17,9 @@ def test_ib_defaults_and_override():
     assert resolve_style("header_fill", None) == "002060"
 
 
-def test_allowed_roots_has_project_default():
-    assert any("Office plugin MCP" in r for r in ALLOWED_ROOTS)
+def test_denied_prefixes_cover_system_dirs():
+    lowered = [d.lower() for d in DENIED_PREFIXES]
+    assert any("windows" in d for d in lowered)
 
 
 def test_ib_defaults_are_spec_verbatim():

@@ -18,26 +18,22 @@ def make_ops_hash(ops: dict) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _is_denied(resolved: Path) -> bool:
+    for denied in config.DENIED_PREFIXES:
+        if resolved.is_relative_to(Path(denied)):
+            return True
+    return resolved.parent == resolved  # a drive root itself is never a target
+
+
 def is_path_allowed(path: str) -> bool:
     if not isinstance(path, str) or not path.strip():
         return False
 
     raw = Path(path.strip())
-    if ".." in raw.parts:
-        return False
-
     resolved = raw.resolve() if raw.is_absolute() else (Path.cwd() / raw).resolve()
-
-    for root in config.ALLOWED_ROOTS:
-        root_path = Path(root).resolve()
-        if resolved == root_path:
-            continue
-        try:
-            resolved.relative_to(root_path)
-        except ValueError:
-            continue
-        return True
-    return False
+    if resolved.is_dir():
+        return False
+    return not _is_denied(resolved)
 
 
 def check_approval(ops: dict, approval_token: str | None) -> dict:

@@ -1,16 +1,17 @@
-"""Task 2 tests: IB deck style defaults, override precedence, ALLOWED_ROOTS."""
+"""Task 2 tests: IB deck style defaults, override precedence, DENIED_PREFIXES."""
 
 import json
 
 import pytest
 
-from config import ALLOWED_ROOTS, load_custom_overrides, resolve_style
+from config import DENIED_PREFIXES, load_custom_overrides, resolve_style
 from styles.ib_deck import IB_DECK_DEFAULTS, get_deck_style
 
 
 def test_deck_defaults():
     assert get_deck_style("header_fill") == "002060"
-    assert any("IBsuite" in r or "Office plugin MCP" in r for r in ALLOWED_ROOTS)
+    lowered = [d.lower() for d in DENIED_PREFIXES]
+    assert any("windows" in d for d in lowered)
 
 
 def test_ib_deck_defaults_are_spec_verbatim():
