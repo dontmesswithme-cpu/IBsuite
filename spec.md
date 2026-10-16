@@ -117,5 +117,31 @@ Date: 2026-10-14. Status: draft for DIR review.
 - Q3 PPT charts in V1? RESOLVED: yes, via `python-pptx` chart parts + headed parity (D20–D21). Proof: gate green.
 - Q4 Shared vs separate venv for `ppt-mcp/`? RESOLVED: separate (N7). Proof: AC-2 runs under `ppt-mcp/.venv`.
 
+## 9. Phase 3 Amendment — Word MCP (single scope, no sub-phases)
+
+Date: 2026-10-15. Status: draft for DIR review.
+
+### Requirements (each names its verifier)
+
+- R10 Word server `word-mcp/` beside `excel-mcp/` and `ppt-mcp/`, dual-engine: headless via `python-docx` (pinned), headed via `Word.Application` COM on the same box. V1 ops: paragraphs/headings/text (read/set), lists (bullets/numbers), tables, images, headers/footers, theme formatting (IB navy headings, Arial body), page setup (size, margins, orientation). Same paranoid flow: denylist `DENIED_PREFIXES` (D9 as amended), exact-`ops_hash` approval, copy-before-write sidecar backups (20 FIFO), append-only audit, `{ok, backup_id, thumbnail}` returns. 13 tools: 4 reads (`list_structure`, `read_text`, `preview_diff`, `screenshot_doc`) + 9 gated (`add_paragraph`, `set_heading`, `format_text`, `add_table`, `add_image`, `add_header_footer`, `apply_theme`, `set_page_setup`, `rollback`). Verifier: `word-mcp` suite green (AC-2 of phase_3).
+- R11 Word headed is visible with shared patterns: open-by-path only, `Visible=True` (D19 extends to Word), busy → retry 200/500/1000ms then `{status:"needs_retry"}` + `.bak` restore, detached → `{warning:"headed_unavailable_fell_back"}` + headless result. Default engine `mode="headless"` on every tool. Verifier: `test_stress_doc.py` headed tests green here, skipped (never error) elsewhere.
+- R12 Word golden memo fixture. `word-mcp/tests/fixtures/make_memo.py: build(path: str) -> None` generates `ib_memo.docx` (cover title, headed sections, 3-statement summary table, comps table, footer with page numbers, Letter); theme asserts (Heading font white bold on `002060`, body `Arial`, accounting-style tables) match frozen `golden_doc.json`. Verifier: `test_doc.py::test_full_ib_grade_vs_golden` green.
+
+### Non-goals
+
+- N8 Word deferred: TOC auto-generation, track-changes/comments, mail merge, macros/VBA, legacy `.doc` (Q6).
+- N9 No PDF export in V1 (Q5): authoring + `.docx` only.
+
+### Locked decisions (D numbering continues)
+
+- D23 Word headless lib = `python-docx` (pinned; the only viable pure-python `.docx` lib — mirrors the D1/D20 rationale).
+- D24 Word headed = `Word.Application` COM, visible, reusing the Excel/PPT retry/fallback/audit shapes.
+- D25 `phases/phase_3.md` carries the whole Word server as a single scope (PPT-sized, no sub-phase split; task plan via writing-plans after approval).
+
+### Open questions (none blocking)
+
+- Q5 PDF export in Word V1? RESOLVED: no (N9). Proof: tool surface has no export verb.
+- Q6 Legacy `.doc` support? RESOLVED: `.docx` only. Proof: `python-docx` cannot write `.doc`; tests use `.docx` fixtures only.
+
 ---
-[SN] Genesis spec + Phase 1 amendment (§7) + Phase 2 amendment (§8, draft for DIR review). Active contracts in `phases/phase_0.md`, `phases/phase_1.md`, `phases/phase_2.md`. `conventions.md` still open (naming/commit rules) — to be locked before DS Terminal 1 if DIR wants it.
+[SN] Genesis spec + amendments §7–§9 (Phase 3 draft for DIR review). Active contracts in `phases/phase_0.md`, `phases/phase_1.md`, `phases/phase_2.md`, `phases/phase_3.md`. `conventions.md` still open (naming/commit rules) — to be locked before DS Terminal 1 if DIR wants it.
