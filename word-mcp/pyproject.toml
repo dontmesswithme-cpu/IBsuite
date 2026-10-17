@@ -1,0 +1,31 @@
+[project]
+name = "word-mcp"
+version = "0.1.0"
+description = "Local MCP server to create and edit real .docx files headless (python-docx) and headed (Word Desktop COM)."
+requires-python = ">=3.11"
+dependencies = [
+    "mcp==2.3.0",
+    "python-docx==1.1.2",
+    "pillow==12.3.0",
+    "pywin32==312; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core", "styles"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+norecursedirs = [".venv", "*.versions", "__pycache__"]
+markers = [
+    "needs_word: requires Word Desktop COM automation (pywin32) on this Windows box",
+]

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "word-mcp": {
+      "command": "C:\\PATH\\TO\\Office plugin MCP\\word-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\PATH\\TO\\Office plugin MCP\\word-mcp\\server.py"],
+      "cwd": "C:\\PATH\\TO\\Office plugin MCP",
+      "env": {
+        "WORD_MCP_DENIED_EXTRA": ""
+      }
+    }
+  }
+}

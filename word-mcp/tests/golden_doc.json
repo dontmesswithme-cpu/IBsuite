@@ -1,0 +1,20 @@
+{
+  "fills": {
+    "heading": "002060"
+  },
+  "fonts": {
+    "heading": {
+      "color": "FFFFFF",
+      "bold": true,
+      "name": "Arial"
+    },
+    "body": {
+      "name": "Arial",
+      "size": 10
+    }
+  },
+  "layout": {
+    "page_width_inches": 8.5,
+    "page_height_inches": 11
+  }
+}
